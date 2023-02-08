@@ -27,19 +27,19 @@
             
             <div class="row">
                 <div class="col ">
-                    <div id="date-container d-flex">
-                        <div><p><span id="year"></span> Années</p></div>
-                        <div><p><span id="day"></span> Jours</p></div>
-                        <div><p><span id="hour"></span> Heures</p></div>
-                        <div><p><span id="min"></span> Minutes</p></div>
-                        <div><p><span id="sec"></span> Secondes</p></div>
+                    <div id="lostTimeDiv" class="date-container d-flex">
+                        <div><p><span class="year"></span> Années</p></div>
+                        <div><p><span class="day"></span> Jours</p></div>
+                        <div><p><span class="hour"></span> Heures</p></div>
+                        <div><p><span class="min"></span> Minutes</p></div>
+                        <div><p><span class="sec"></span> Secondes</p></div>
                     </div>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col ">
-                    <div id="date-container d-flex">
+                    <div class="date-container d-flex">
                         Ou
                     </div>
                 </div>
@@ -47,12 +47,12 @@
 
             <div class="row">
                 <div class="col ">
-                    <div id="date-container d-flex">
-                        <div><p><span id="msyear"></span> Années</p></div>
-                        <div><p><span id="msday"></span> Jours</p></div>
-                        <div><p><span id="mshour"></span> Heures</p></div>
-                        <div><p><span id="msmin"></span> Minutes</p></div>
-                        <div><p><span id="mssec"></span> Secondes</p></div>
+                    <div id="absoluteLostTimeDiv" class="date-container d-flex">
+                        <div><p><span class="msyear"></span> Années</p></div>
+                        <div><p><span class="msday"></span> Jours</p></div>
+                        <div><p><span class="mshour"></span> Heures</p></div>
+                        <div><p><span class="msmin"></span> Minutes</p></div>
+                        <div><p><span class="mssec"></span> Secondes</p></div>
                     </div>
                 </div>
             </div>
@@ -63,6 +63,18 @@
                         <input type="text" id="steamid" required="required">
                         <input type="submit" id="steamidsubmit" >
                     </form>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col ">
+                    <div id="steamLostTime" class="date-container d-flex">
+                        <div><p><span id="steamyear"></span> Années</p></div>
+                        <div><p><span id="steamday"></span> Jours</p></div>
+                        <div><p><span id="steamhour"></span> Heures</p></div>
+                        <div><p><span id="steammin"></span> Minutes</p></div>
+                        <div><p><span id="steamsec"></span> Secondes</p></div>
+                    </div>
                 </div>
             </div>
             
@@ -77,6 +89,10 @@
         let form = document.getElementById('form')
         let dateInput = document.getElementById('date')
         let dateContainer = document.getElementById('date-container')
+
+        let lostTimeDiv = document.getElementById('lostTimeDiv')
+        let absoluteLostTimeDiv = document.getElementById('absoluteLostTimeDiv')
+        let steamLostTime = document.getElementById('steamLostTime')
 
         let steamform = document.getElementById('steamform')
 
@@ -132,41 +148,77 @@
             var newDate = new Date(dateInput.value);
             var now = Date.now()
             dateInMS = new Date(now - newDate.getTime())
-            calculateLostTime()
+            // updateTimeForDiv(lostTimeDiv, calculateLostTime(dateInMS))
             
             if (timer !== undefined) {
                 clearInterval(timer)
             }
             timer = setInterval(() => {
-                calculateLostTime()
+                updateTimeForDiv(lostTimeDiv, calculateLostTime(dateInMS))
                 dateInMS.setTime(dateInMS.getTime() + 1000)
             }, 1000);
         })
 
+        let calculateAbsoluteLostTime = (timeInMS) => {
+            let inYears = Math.floor(timeInMS.getTime() / 1000 / 60 / 60 / 24 / 365)
+            let inDays = Math.floor(timeInMS.getTime() / 1000 / 60 / 60 / 24)
+            let inHours = Math.floor(timeInMS.getTime() / 1000 / 60 / 60)
+            let inMinutes = Math.floor(timeInMS.getTime() / 1000 / 60)
+            let inSeconds = Math.floor(timeInMS.getTime() / 1000)
+            return {
+                years: inYears,
+                days: inDays,
+                hours: inHours,
+                mins: inMinutes,
+                secs: inSeconds,
+            }
+        }
+
         let calculateLostTime = (timeInMS) => {
-            let inYears = Math.floor(dateInMS.getTime() / 1000 / 60 / 60 / 24 / 365)
-            let inDays = Math.floor(dateInMS.getTime() / 1000 / 60 / 60 / 24)
-            let inHours = Math.floor(dateInMS.getTime() / 1000 / 60 / 60)
-            let inMinutes = Math.floor(dateInMS.getTime() / 1000 / 60)
-            let inSeconds = Math.floor(dateInMS.getTime() / 1000)
+            let absoluteTime = calculateAbsoluteLostTime(timeInMS)
+            let years = Math.floor(absoluteTime.years)
+            let days = Math.floor(absoluteTime.days - (years * 365))
+            let hours = Math.floor(absoluteTime.hours - (absoluteTime.days * 24))
+            let mins = Math.floor(absoluteTime.mins - (absoluteTime.hours * 60))
+            let secs = Math.floor(absoluteTime.secs - (absoluteTime.mins * 60))
+            return {
+                years: years,
+                days: days,
+                hours: hours,
+                mins: mins,
+                secs: secs,
+            }
+        }
 
-            let years = Math.floor(inYears)
-            let days = Math.floor(inDays - (years * 365))
-            let hours = Math.floor(inHours - (inDays * 24))
-            let mins = Math.floor(inMinutes - (inHours * 60))
-            let secs = Math.floor(inSeconds - (inMinutes * 60))
+        let updateTimeForDiv = (div, timeObject) => {
+            let els = div.getElementsByTagName('div')
+            console.log(timeObject)
 
-            divYear.innerText = years + ' Années'
-            divDay.innerText = days + ' Jours'
-            divHour.innerText = hours + ' Heures'
-            divMin.innerText = mins + ' Minutes'
-            divSec.innerText = secs + ' Secondes'
+            for (let div of els) {
+                console.log(div.getElementsByClassName('year'))
+                console.log(div.getElementsByClassName('day'))
+                div.getElementsByClassName('year')[0].innerText = timeObject.years
+                div.getElementsByClassName('day')[0].innerText = timeObject.days
+                div.getElementsByClassName('hour')[0].innerText = timeObject.hours
+                div.getElementsByClassName('min')[0].innerText = timeObject.mins
+                div.getElementsByClassName('sec')[0].innerText = timeObject.secs
+            }
 
-            divMSYear.innerText = inYears + ' Années'
-            divMSDay.innerText = inDays + ' Jours'
-            divMSHour.innerText = inHours + ' Heures'
-            divMSMin.innerText = inMinutes + ' Minutes'
-            divMSSec.innerText = inSeconds + ' Secondes'
+            // div.querySelector('.year').innerText = timeObject.years
+
+
+
+            // divYear.innerText = years + ' Années'
+            // divDay.innerText = days + ' Jours'
+            // divHour.innerText = hours + ' Heures'
+            // divMin.innerText = mins + ' Minutes'
+            // divSec.innerText = secs + ' Secondes'
+            //
+            // divMSYear.innerText = inYears + ' Années'
+            // divMSDay.innerText = inDays + ' Jours'
+            // divMSHour.innerText = inHours + ' Heures'
+            // divMSMin.innerText = inMinutes + ' Minutes'
+            // divMSSec.innerText = inSeconds + ' Secondes'
         }
 
         const evt = new Event("submit", {});
