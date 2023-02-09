@@ -17,7 +17,7 @@
         <div class="container">
             <h1>How much time have you lost ?</h1>
 
-            <div><span id="percentageOfLifeLost"></span></div>
+            <div><span id="percentageOfLifeLostTotal"></span></div>
 
             <div class="d-flex">
                 <form action="" id="form">
@@ -66,6 +66,10 @@
                     </div>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="col"><span id="percentageOfLifeLostSteam"></span></div>
+            </div>
             
             <div class="row">
                 <div class="col ">
@@ -97,6 +101,10 @@
             </div>
 
             <div class="row">
+                <div class="col"><span id="percentageOfLifeLostLol"></span></div>
+            </div>
+
+            <div class="row">
                 <div class="col ">
                     <form action="" id="lolform">
                         <input type="text" id="lolid" placeholder="lolId">
@@ -116,153 +124,13 @@
                     </div>
                 </div>
             </div>
+
+            <canvas id="myChart"></canvas>
             
         </div>
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
-    <script>
-        const STEAM_API_KEY = '8F234C9A7402FE95766ADF2570FBE004'
-        const STEAM_ID = '76561198078481960'
-        let steamform = document.getElementById('steamform')
-        let steamformClientIdInput = document.getElementById('steamid')
-        let steamId = undefined
-        let steamTimePlayedInMs = undefined
-        let steamTimer = undefined
-
-        // https://developer.riotgames.com/apis#tft-match-v1/GET_getMatch
-        const LOL_API_KEY = 'RGAPI-5e3b94d4-6b7e-4341-b987-91bb03eab772' // refresh tous les jours
-        const LOL_ID = 'bpfNnWZ6fbtEkHwiqbXuSXvzpQkGICWjhh17lOrEvvpV04vTCVh0pYhGg2xybQPJP7sGoimspdcUOA'
-        let lolform = document.getElementById('lolform')
-        let lolformClientIdInput = document.getElementById('lolid')
-        let lolId = undefined
-        let lolTimePlayedInMs = undefined
-        let lolTimer = undefined
-
-
-
-        let percentageOfLifeLost = 0
-
-        let mainForm = document.getElementById('form')
-        let riotform = document.getElementById('riotform')
-
-        let mainFormBirthdayInput = document.getElementById('date')
-        let riotFormBirthdayInput = document.getElementById('date')
-
-        let providers = new Map()
-        providers.set('main', ['year', 'day', 'hour', 'minute', 'second'])
-        providers.set('absolute', ['absoluteyear', 'absoluteday', 'absolutehour', 'absoluteminute', 'absolutesecond'])
-        providers.set('steam', ['steamyear', 'steamday', 'steamhour', 'steamminute', 'steamsecond'])
-
-        let timer = undefined
-        let lifeTimeDate = new Date()
-        let lifeTimeInMs = 0
-
-        /**
-         * BIRTHDAY
-         */
-        mainForm.addEventListener('submit', (e) => {
-            e.preventDefault()
-            
-            let newDate = new Date(mainFormBirthdayInput.value);
-            let now = Date.now()
-            lifeTimeInMs = new Date(now - newDate.getTime()).getTime()
-            updateTimeForDiv('main', calculateLostTime(lifeTimeInMs))
-            updateTimeForDiv('absolute', calculateAbsoluteLostTime(lifeTimeInMs))
-
-            if (timer !== undefined) {
-                clearInterval(timer)
-            }
-            timer = setInterval(() => {
-                updateTimeForDiv('main', calculateLostTime(lifeTimeInMs))
-                updateTimeForDiv('absolute', calculateAbsoluteLostTime(lifeTimeInMs))
-                lifeTimeDate.setTime(lifeTimeInMs + 1000)
-                lifeTimeInMs = lifeTimeDate.getTime()
-            }, 1000);
-        })
-
-        let calculateAbsoluteLostTime = (timeInMS) => {
-            let inYears = Math.floor(timeInMS / 1000 / 60 / 60 / 24 / 365)
-            let inDays = Math.floor(timeInMS / 1000 / 60 / 60 / 24)
-            let inHours = Math.floor(timeInMS / 1000 / 60 / 60)
-            let inMinutes = Math.floor(timeInMS / 1000 / 60)
-            let inSeconds = Math.floor(timeInMS / 1000)
-            return [
-                inYears,
-                inDays,
-                inHours,
-                inMinutes,
-                inSeconds
-            ]
-        }
-
-        let calculateLostTime = (timeInMS) => {
-            let absoluteTime = calculateAbsoluteLostTime(timeInMS)
-            let years = Math.floor(absoluteTime[0])
-            let days = Math.floor(absoluteTime[1] - (years * 365))
-            let hours = Math.floor(absoluteTime[2] - (absoluteTime[1] * 24))
-            let mins = Math.floor(absoluteTime[3] - (absoluteTime[2] * 60))
-            let secs = Math.floor(absoluteTime[4] - (absoluteTime[3] * 60))
-            return [
-                years,
-                days,
-                hours,
-                mins,
-                secs
-            ]
-        }
-
-        let updateTimeForDiv = (div, timeArray) => {
-            let els = providers.get(div)
-            Object.entries(els).forEach(([i, el]) => {
-                document.getElementById(el).innerText = timeArray[i]
-            })
-        }
-
-        let calculatePercentageOfLifeLost = () => {
-            percentageOfLifeLost = parseFloat(steamTimePlayedInMs * 100 / lifeTimeInMs).toFixed(2)
-            document.getElementById('percentageOfLifeLost').innerText = 'Percentage of your life lost playing : ' + percentageOfLifeLost + ' %'
-        }
-
-        /**
-         * STEAM
-         */
-        steamform.addEventListener('submit', (e) => {
-            e.preventDefault()
-
-            steamId = document.getElementById('steamid').value || STEAM_ID
-
-            fetch(`https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${STEAM_API_KEY}&steamid=${steamId}&format=json&include_played_free_games=true&include_appinfo=true`, {
-                mode: 'cors',
-                crossorigin: true,
-                credentials: 'same-origin',
-                headers: {
-                    "Origin": "https://localhost"
-                }
-            })
-                .then(function(response) {
-                    console.log(response)
-                    return response.json();
-                })
-                .then(function(json) {
-                    let timePlayedInMinute = 0
-                    json.response.games.forEach((el, i) => {
-                        console.log(i, el)
-                        timePlayedInMinute += el.playtime_forever
-                    })
-                    steamTimePlayedInMs = timePlayedInMinute * 60 * 1000
-                    console.log(steamTimePlayedInMs)
-
-                    updateTimeForDiv('steam', calculateLostTime(steamTimePlayedInMs))
-                    calculatePercentageOfLifeLost()
-                });
-        })
-
-
-        // test Events
-        mainFormBirthdayInput.valueAsDate = new Date('2001-01-03')
-        const evt = new Event("submit", {});
-        mainForm.dispatchEvent(evt);
-    </script>
+    <script src="./app.js" ></script>
 </body>
 </html>
